@@ -2,7 +2,10 @@ module github.com/Warashi/gh-secrets-manager
 
 go 1.24.2
 
-require github.com/cli/go-gh/v2 v2.12.0
+require (
+	github.com/cli/go-gh/v2 v2.12.0
+	golang.org/x/crypto v0.37.0
+)
 
 require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
@@ -15,7 +18,6 @@ require (
 	github.com/muesli/termenv v0.16.0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/thlib/go-timezone-local v0.0.0-20210907160436-ef149e42d28e // indirect
-	golang.org/x/crypto v0.37.0
 	golang.org/x/sys v0.32.0 // indirect
 	golang.org/x/term v0.31.0 // indirect
 	golang.org/x/text v0.24.0 // indirect
