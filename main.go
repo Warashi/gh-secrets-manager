@@ -166,7 +166,13 @@ func (m *manager) runRotate(args []string) error {
 		}
 		encrypted, err := m.encryptSecret(s.Owner, s.Repository, s.Name, *env, val)
 		if err != nil {
-			return fmt.Errorf("encryption failed for %s in %s/%s: %v", s.Name, s.Owner, s.Repository, err)
+			return fmt.Errorf(
+				"encryption failed for %s in %s/%s: %v",
+				s.Name,
+				s.Owner,
+				s.Repository,
+				err,
+			)
 		}
 		sf.Secrets[i].EncryptedSecret = encrypted
 		sf.Secrets[i].UpdatedAt = now
@@ -242,14 +248,14 @@ func (m *manager) loadSecrets(path string) (*SecretsFile, error) {
 func (m *manager) saveSecrets(path string, sf *SecretsFile) error {
 	// Ensure directory exists
 	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
 	}
 	out, err := json.MarshalIndent(sf, "", "  ")
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, append(out, '\n'), 0644)
+	return os.WriteFile(path, append(out, '\n'), 0o644)
 }
 
 func _main(args []string) int {
