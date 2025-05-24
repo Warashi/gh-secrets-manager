@@ -270,7 +270,10 @@ func _main(args []string) int {
 		return 1
 	}
 
-	m := &manager{client: client}
+	m := &manager{
+		client:  client,
+		pubKeys: make(map[string][32]byte),
+	}
 
 	cmd := args[1]
 	switch cmd {
