@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.0.5](https://github.com/Warashi/gh-secrets-manager/compare/v0.0.4...v0.0.5) - 2025-06-07
+- chore(deps): Bump github/codeql-action from 3.28.18 to 3.28.19 by @dependabot in https://github.com/Warashi/gh-secrets-manager/pull/21
+
 ## [v0.0.4](https://github.com/Warashi/gh-secrets-manager/compare/v0.0.3...v0.0.4) - 2025-05-31
 - chore(deps): Bump github.com/cli/go-gh/v2 from 2.12.0 to 2.12.1 by @dependabot in https://github.com/Warashi/gh-secrets-manager/pull/19
 
