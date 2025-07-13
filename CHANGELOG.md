@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.0.6](https://github.com/Warashi/gh-secrets-manager/compare/v0.0.5...v0.0.6) - 2025-07-13
+- chore(deps): Bump nixbuild/nix-quick-install-action from 30 to 31 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/26
+- chore(deps): Bump nixbuild/nix-quick-install-action from 31 to 32 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/28
+- chore(deps): Bump cli/gh-extension-precompile from 2.0.0 to 2.1.0 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/29
+- chore(deps): Bump github/codeql-action from 3.29.0 to 3.29.1 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/30
+- chore(deps): Bump github/codeql-action from 3.29.1 to 3.29.2 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/31
+- chore(deps): Bump golang.org/x/crypto from 0.39.0 to 0.40.0 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/32
+
 ## [v0.0.5](https://github.com/Warashi/gh-secrets-manager/compare/v0.0.4...v0.0.5) - 2025-06-15
 - chore(deps): Bump github/codeql-action from 3.28.18 to 3.28.19 by @dependabot in https://github.com/Warashi/gh-secrets-manager/pull/21
 - chore(deps): Bump Songmu/tagpr from 1.6.1 to 1.7.0 by @dependabot in https://github.com/Warashi/gh-secrets-manager/pull/24
