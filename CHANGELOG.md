@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.0.7](https://github.com/Warashi/gh-secrets-manager/compare/v0.0.6...v0.0.7) - 2025-07-26
+- chore(deps): Bump github/codeql-action from 3.29.2 to 3.29.4 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/33
+
 ## [v0.0.6](https://github.com/Warashi/gh-secrets-manager/compare/v0.0.5...v0.0.6) - 2025-07-13
 - chore(deps): Bump nixbuild/nix-quick-install-action from 30 to 31 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/26
 - chore(deps): Bump nixbuild/nix-quick-install-action from 31 to 32 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/28
