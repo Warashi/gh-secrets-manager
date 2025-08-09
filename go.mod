@@ -3,7 +3,7 @@ module github.com/Warashi/gh-secrets-manager
 go 1.24.2
 
 require (
-	github.com/cli/go-gh/v2 v2.12.1
+	github.com/cli/go-gh/v2 v2.12.2
 	golang.org/x/crypto v0.40.0
 )
 
