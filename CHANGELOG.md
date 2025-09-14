@@ -1,5 +1,19 @@
 # Changelog
 
+## [v0.0.8](https://github.com/Warashi/gh-secrets-manager/compare/v0.0.7...v0.0.8) - 2025-09-14
+- chore(deps): Bump actions/checkout from 4.2.2 to 5.0.0 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/41
+- chore(deps): Bump github/codeql-action from 3.29.8 to 3.29.9 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/42
+- chore(deps): Bump actions/create-github-app-token from 2.1.0 to 2.1.1 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/43
+- chore(deps): Bump github/codeql-action from 3.29.9 to 3.29.11 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/45
+- chore(deps): Bump nixbuild/nix-quick-install-action from 32 to 33 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/46
+- chore(deps): Bump github/codeql-action from 3.29.11 to 3.30.1 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/47
+- chore(deps): Bump actions/setup-go from 5.5.0 to 6.0.0 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/48
+- chore(deps): Bump Songmu/tagpr from 1.7.0 to 1.7.2 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/49
+- chore(deps): Bump Songmu/tagpr from 1.7.2 to 1.9.0 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/53
+- chore(deps): Bump actions/create-github-app-token from 2.1.1 to 2.1.4 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/52
+- chore(deps): Bump github/codeql-action from 3.30.1 to 3.30.3 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/51
+- chore(deps): Bump golang.org/x/crypto from 0.41.0 to 0.42.0 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/50
+
 ## [v0.0.7](https://github.com/Warashi/gh-secrets-manager/compare/v0.0.6...v0.0.7) - 2025-08-10
 - chore(deps): Bump github/codeql-action from 3.29.2 to 3.29.4 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/33
 - chore(deps): Bump github/codeql-action from 3.29.4 to 3.29.5 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/35
