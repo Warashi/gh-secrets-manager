@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.0.10](https://github.com/Warashi/gh-secrets-manager/compare/v0.0.9...v0.0.10) - 2025-11-08
+- chore(deps): Bump github/codeql-action from 4.30.8 to 4.30.9 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/60
+- chore(deps): Bump github/codeql-action from 4.30.9 to 4.31.2 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/63
+- chore(deps): Bump github.com/cli/go-gh/v2 from 2.12.2 to 2.13.0 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/64
+
 ## [v0.0.9](https://github.com/Warashi/gh-secrets-manager/compare/v0.0.8...v0.0.9) - 2025-10-13
 - chore(deps): Bump github/codeql-action from 3.30.3 to 3.30.5 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/55
 - chore(deps): Bump nixbuild/nix-quick-install-action from 33 to 34 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/54
