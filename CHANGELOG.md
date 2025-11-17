@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.0.11](https://github.com/Warashi/gh-secrets-manager/compare/v0.0.10...v0.0.11) - 2025-11-17
+- chore(deps): Bump github/codeql-action from 4.31.2 to 4.31.3 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/66
+- chore(deps): Bump golang.org/x/crypto from 0.43.0 to 0.44.0 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/65
+
 ## [v0.0.10](https://github.com/Warashi/gh-secrets-manager/compare/v0.0.9...v0.0.10) - 2025-11-08
 - chore(deps): Bump github/codeql-action from 4.30.8 to 4.30.9 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/60
 - chore(deps): Bump github/codeql-action from 4.30.9 to 4.31.2 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/63
