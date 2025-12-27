@@ -5,5 +5,5 @@ pkgs.buildGoLatestModule {
   pname = "gh-secrets-manager";
   version = "0.0.12";
   src = ./.;
-  vendorHash = "sha256-KqXW3kE3G3oHbQGbjv5eSCp0kypLJeQfkbJ+b70W5pU=";
+  vendorHash = "sha256-dGjVOIZY7P9eMv94v6Vd2BuUASLpsrnjw6ixi0jyfd8=";
 }
