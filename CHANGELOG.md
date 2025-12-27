@@ -1,5 +1,20 @@
 # Changelog
 
+## [v0.0.13](https://github.com/Warashi/gh-secrets-manager/compare/v0.0.12...v0.0.13) - 2025-12-27
+- chore(deps): Bump actions/checkout from 5.0.0 to 6.0.0 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/70
+- chore(deps): Bump github/codeql-action from 4.31.3 to 4.31.4 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/71
+- chore(deps): Bump actions/create-github-app-token from 2.1.4 to 2.2.0 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/72
+- chore(deps): Bump actions/setup-go from 6.0.0 to 6.1.0 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/73
+- chore(deps): Bump github/codeql-action from 4.31.4 to 4.31.5 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/75
+- chore(deps): Bump github/codeql-action from 4.31.5 to 4.31.8 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/81
+- chore(deps): Bump Songmu/tagpr from 1.9.0 to 1.9.2 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/79
+- chore(deps): Bump actions/create-github-app-token from 2.2.0 to 2.2.1 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/77
+- chore(deps): Bump actions/checkout from 6.0.0 to 6.0.1 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/76
+- chore(deps): Bump github/codeql-action from 4.31.8 to 4.31.9 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/83
+- chore(deps): Bump Songmu/tagpr from 1.9.2 to 1.10.0 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/82
+- chore: update dependabot config by @Warashi in https://github.com/Warashi/gh-secrets-manager/pull/84
+- chore(deps): Bump golang.org/x/crypto from 0.45.0 to 0.46.0 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/80
+
 ## [v0.0.12](https://github.com/Warashi/gh-secrets-manager/compare/v0.0.11...v0.0.12) - 2025-11-22
 - chore(deps): Bump golang.org/x/crypto from 0.44.0 to 0.45.0 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/68
 
