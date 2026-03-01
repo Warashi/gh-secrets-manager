@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.0.14](https://github.com/Warashi/gh-secrets-manager/compare/v0.0.13...v0.0.14) - 2026-03-01
+- chore(deps): Bump actions/checkout from 6.0.1 to 6.0.2 in the github-actions-all group by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/85
+
 ## [v0.0.13](https://github.com/Warashi/gh-secrets-manager/compare/v0.0.12...v0.0.13) - 2025-12-27
 - chore(deps): Bump actions/checkout from 5.0.0 to 6.0.0 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/70
 - chore(deps): Bump github/codeql-action from 4.31.3 to 4.31.4 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/71
