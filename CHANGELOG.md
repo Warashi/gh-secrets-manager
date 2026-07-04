@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.0.14](https://github.com/Warashi/gh-secrets-manager/compare/v0.0.13...v0.0.14) - 2026-07-04
+- chore(deps): Bump actions/checkout from 6.0.1 to 6.0.2 in the github-actions-all group by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/85
+- feat: add key id support by @Warashi in https://github.com/Warashi/gh-secrets-manager/pull/90
+- chore(deps): Bump the github-actions-all group across 1 directory with 4 updates by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/89
+- chore(deps): Bump golang.org/x/crypto from 0.46.0 to 0.47.0 in the gomod-all group by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/88
+
 ## [v0.0.13](https://github.com/Warashi/gh-secrets-manager/compare/v0.0.12...v0.0.13) - 2025-12-27
 - chore(deps): Bump actions/checkout from 5.0.0 to 6.0.0 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/70
 - chore(deps): Bump github/codeql-action from 4.31.3 to 4.31.4 by @dependabot[bot] in https://github.com/Warashi/gh-secrets-manager/pull/71
