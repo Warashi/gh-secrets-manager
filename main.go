@@ -20,6 +20,7 @@ type SecretEntry struct {
 	Repository      string    `json:"repository"`
 	Name            string    `json:"name"`
 	EncryptedSecret string    `json:"encrypted_secret"`
+	KeyID           string    `json:"key_id"`
 	Env             string    `json:"env"`
 	AddedAt         time.Time `json:"added_at"`
 	UpdatedAt       time.Time `json:"updated_at"`
@@ -108,7 +109,7 @@ func (m *manager) runSet(args []string) error {
 		return fmt.Errorf("environment variable %s is empty or not set", *env)
 	}
 
-	encrypted, _, err := m.encryptSecret(*owner, *repo, *name, *env, val)
+	encrypted, keyID, err := m.encryptSecret(*owner, *repo, *name, *env, val)
 	if err != nil {
 		return fmt.Errorf("encryption failed: %v", err)
 	}
@@ -125,6 +126,7 @@ func (m *manager) runSet(args []string) error {
 	for i, s := range sf.Secrets {
 		if s.Owner == *owner && s.Repository == *repo && s.Name == *name {
 			sf.Secrets[i].EncryptedSecret = encrypted
+			sf.Secrets[i].KeyID = keyID
 			sf.Secrets[i].UpdatedAt = now
 			found = true
 			break
@@ -137,6 +139,7 @@ func (m *manager) runSet(args []string) error {
 			Repository:      *repo,
 			Name:            *name,
 			EncryptedSecret: encrypted,
+			KeyID:           keyID,
 			Env:             *env,
 			AddedAt:         now,
 			UpdatedAt:       now,
@@ -177,7 +180,7 @@ func (m *manager) runRotate(args []string) error {
 		if s.Env != *env {
 			continue
 		}
-		encrypted, _, err := m.encryptSecret(s.Owner, s.Repository, s.Name, *env, val)
+		encrypted, keyID, err := m.encryptSecret(s.Owner, s.Repository, s.Name, *env, val)
 		if err != nil {
 			return fmt.Errorf(
 				"encryption failed for %s in %s/%s: %v",
@@ -188,6 +191,7 @@ func (m *manager) runRotate(args []string) error {
 			)
 		}
 		sf.Secrets[i].EncryptedSecret = encrypted
+		sf.Secrets[i].KeyID = keyID
 		sf.Secrets[i].UpdatedAt = now
 		updated++
 	}
