@@ -63,6 +63,7 @@ go build -o gh-secrets-manager main.go
 ```sh
 gh-secrets-manager set --file <file> --owner <owner> --repository <repo> --name <name> --env <ENV_VAR>
 gh-secrets-manager rotate --file <file> --env <ENV_VAR>
+gh-secrets-manager rotate --file <file> --all
 gh-secrets-manager delete --file <file> --owner <owner> --repository <repo> --name <name>
 ```
 
@@ -78,7 +79,12 @@ gh-secrets-manager set --file secrets.json --owner myorg --repository myrepo --n
 
 ```sh
 gh-secrets-manager rotate --file secrets.json --env MY_SECRET_ENV
+gh-secrets-manager rotate --file secrets.json --all
 ```
+
+`--all` rotates every entry in `secrets.json` using each entry's `env` field.
+Entries with an empty `env`, or whose environment variable is unset/empty, are
+skipped.
 
 #### Delete a Secret
 
