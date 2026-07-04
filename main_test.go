@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"path/filepath"
 	"testing"
 
 	"github.com/cli/go-gh/v2/pkg/api"
@@ -145,5 +146,132 @@ func TestEncryptSecret(t *testing.T) {
 	}
 	if string(opened) != "s3cr3t" {
 		t.Errorf("decrypted secret = %q, want %q", opened, "s3cr3t")
+	}
+}
+
+func TestRunSetNewEntry(t *testing.T) {
+	server, wantKeyID, _ := newPublicKeyServer(t)
+	defer server.Close()
+
+	m := newTestManager(t, server)
+	file := filepath.Join(t.TempDir(), "secrets.json")
+	t.Setenv("MY_SECRET_ENV", "s3cr3t")
+
+	if err := m.runSet([]string{
+		"--file", file,
+		"--owner", "myorg",
+		"--repository", "myrepo",
+		"--name", "SECRET_NAME",
+		"--env", "MY_SECRET_ENV",
+	}); err != nil {
+		t.Fatalf("runSet returned error: %v", err)
+	}
+
+	sf, err := m.loadSecrets(file)
+	if err != nil {
+		t.Fatalf("failed to load secrets file: %v", err)
+	}
+	if len(sf.Secrets) != 1 {
+		t.Fatalf("len(sf.Secrets) = %d, want 1", len(sf.Secrets))
+	}
+	if got := sf.Secrets[0].KeyID; got != wantKeyID {
+		t.Errorf("KeyID = %q, want %q", got, wantKeyID)
+	}
+	if sf.Secrets[0].EncryptedSecret == "" {
+		t.Errorf("EncryptedSecret is empty")
+	}
+}
+
+func TestRunSetUpdatesExistingEntryKeyID(t *testing.T) {
+	server, wantKeyID, _ := newPublicKeyServer(t)
+	defer server.Close()
+
+	m := newTestManager(t, server)
+	file := filepath.Join(t.TempDir(), "secrets.json")
+	t.Setenv("MY_SECRET_ENV", "s3cr3t")
+
+	setArgs := []string{
+		"--file", file,
+		"--owner", "myorg",
+		"--repository", "myrepo",
+		"--name", "SECRET_NAME",
+		"--env", "MY_SECRET_ENV",
+	}
+	if err := m.runSet(setArgs); err != nil {
+		t.Fatalf("first runSet returned error: %v", err)
+	}
+
+	// Simulate a pre-existing entry created before key_id support existed.
+	sf, err := m.loadSecrets(file)
+	if err != nil {
+		t.Fatalf("failed to load secrets file: %v", err)
+	}
+	sf.Secrets[0].KeyID = ""
+	if err := m.saveSecrets(file, sf); err != nil {
+		t.Fatalf("failed to save secrets file: %v", err)
+	}
+
+	if err := m.runSet(setArgs); err != nil {
+		t.Fatalf("second runSet returned error: %v", err)
+	}
+
+	sf, err = m.loadSecrets(file)
+	if err != nil {
+		t.Fatalf("failed to load secrets file: %v", err)
+	}
+	if len(sf.Secrets) != 1 {
+		t.Fatalf("len(sf.Secrets) = %d, want 1", len(sf.Secrets))
+	}
+	if got := sf.Secrets[0].KeyID; got != wantKeyID {
+		t.Errorf("KeyID = %q, want %q", got, wantKeyID)
+	}
+}
+
+func TestRunRotateUpdatesKeyID(t *testing.T) {
+	server, wantKeyID, _ := newPublicKeyServer(t)
+	defer server.Close()
+
+	m := newTestManager(t, server)
+	file := filepath.Join(t.TempDir(), "secrets.json")
+
+	sf := &SecretsFile{
+		Version: 1,
+		Secrets: []SecretEntry{
+			{Owner: "myorg", Repository: "repo-a", Name: "SECRET_NAME", Env: "MY_SECRET_ENV"},
+			{Owner: "myorg", Repository: "repo-b", Name: "SECRET_NAME", Env: "MY_SECRET_ENV"},
+			{Owner: "myorg", Repository: "repo-c", Name: "OTHER_SECRET", Env: "OTHER_ENV"},
+		},
+	}
+	if err := m.saveSecrets(file, sf); err != nil {
+		t.Fatalf("failed to save secrets file: %v", err)
+	}
+	t.Setenv("MY_SECRET_ENV", "new-s3cr3t")
+
+	if err := m.runRotate([]string{"--file", file, "--env", "MY_SECRET_ENV"}); err != nil {
+		t.Fatalf("runRotate returned error: %v", err)
+	}
+
+	got, err := m.loadSecrets(file)
+	if err != nil {
+		t.Fatalf("failed to load secrets file: %v", err)
+	}
+	for _, s := range got.Secrets {
+		if s.Env != "MY_SECRET_ENV" {
+			if s.KeyID != "" {
+				t.Errorf(
+					"unrelated entry %s/%s got KeyID = %q, want empty",
+					s.Owner,
+					s.Repository,
+					s.KeyID,
+				)
+			}
+			continue
+		}
+		if s.KeyID != wantKeyID {
+			t.Errorf("entry %s/%s KeyID = %q, want %q", s.Owner, s.Repository, s.KeyID, wantKeyID)
+		}
+		if s.EncryptedSecret == "" {
+			t.Errorf("entry %s/%s EncryptedSecret is empty", s.Owner, s.Repository)
+		}
 	}
 }
