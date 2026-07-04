@@ -20,6 +20,7 @@ type SecretEntry struct {
 	Repository      string    `json:"repository"`
 	Name            string    `json:"name"`
 	EncryptedSecret string    `json:"encrypted_secret"`
+	KeyID           string    `json:"key_id"`
 	Env             string    `json:"env"`
 	AddedAt         time.Time `json:"added_at"`
 	UpdatedAt       time.Time `json:"updated_at"`
@@ -31,50 +32,63 @@ type SecretsFile struct {
 	Secrets []SecretEntry `json:"secrets"`
 }
 
-type manager struct {
-	client  *api.RESTClient
-	pubKeys map[string][32]byte
+// publicKey holds a GitHub repository public key along with the key ID
+// GitHub assigns to it. The key ID must be tracked alongside the encrypted
+// secret so consumers (e.g. Terraform) can identify which key was used.
+type publicKey struct {
+	ID  string
+	Key [32]byte
 }
 
-func (m *manager) getPublicKey(owner, repo string) ([32]byte, error) {
+type manager struct {
+	client  *api.RESTClient
+	pubKeys map[string]publicKey
+}
+
+func (m *manager) getPublicKey(owner, repo string) (publicKey, error) {
 	if pk, ok := m.pubKeys[owner+"/"+repo]; ok {
 		return pk, nil
 	}
 
-	var pk struct {
-		Key string `json:"key"`
+	var resp struct {
+		KeyID string `json:"key_id"`
+		Key   string `json:"key"`
 	}
-	if err := m.client.Get(fmt.Sprintf("repos/%s/%s/actions/secrets/public-key", owner, repo), &pk); err != nil {
-		return [32]byte{}, err
+	if err := m.client.Get(fmt.Sprintf("repos/%s/%s/actions/secrets/public-key", owner, repo), &resp); err != nil {
+		return publicKey{}, err
 	}
 
-	keyBytes, err := base64.StdEncoding.DecodeString(pk.Key)
+	keyBytes, err := base64.StdEncoding.DecodeString(resp.Key)
 	if err != nil {
-		return [32]byte{}, err
+		return publicKey{}, err
 	}
 	if len(keyBytes) != 32 {
-		return [32]byte{}, fmt.Errorf("unexpected public key length: %d", len(keyBytes))
+		return publicKey{}, fmt.Errorf("unexpected public key length: %d", len(keyBytes))
 	}
-	var pubKey [32]byte
-	copy(pubKey[:], keyBytes)
+	var pk publicKey
+	pk.ID = resp.KeyID
+	copy(pk.Key[:], keyBytes)
 
-	m.pubKeys[owner+"/"+repo] = pubKey
+	m.pubKeys[owner+"/"+repo] = pk
 
-	return pubKey, nil
+	return pk, nil
 }
 
-func (m *manager) encryptSecret(owner, repo, name, env string, secret string) (string, error) {
-	pubKey, err := m.getPublicKey(owner, repo)
+func (m *manager) encryptSecret(
+	owner, repo, name, env string,
+	secret string,
+) (encrypted, keyID string, err error) {
+	pk, err := m.getPublicKey(owner, repo)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	sealed, err := box.SealAnonymous(nil, []byte(secret), &pubKey, rand.Reader)
+	sealed, err := box.SealAnonymous(nil, []byte(secret), &pk.Key, rand.Reader)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	enc := base64.StdEncoding.EncodeToString(sealed)
-	return enc, nil
+	return enc, pk.ID, nil
 }
 
 func (m *manager) runSet(args []string) error {
@@ -95,7 +109,7 @@ func (m *manager) runSet(args []string) error {
 		return fmt.Errorf("environment variable %s is empty or not set", *env)
 	}
 
-	encrypted, err := m.encryptSecret(*owner, *repo, *name, *env, val)
+	encrypted, keyID, err := m.encryptSecret(*owner, *repo, *name, *env, val)
 	if err != nil {
 		return fmt.Errorf("encryption failed: %v", err)
 	}
@@ -112,6 +126,7 @@ func (m *manager) runSet(args []string) error {
 	for i, s := range sf.Secrets {
 		if s.Owner == *owner && s.Repository == *repo && s.Name == *name {
 			sf.Secrets[i].EncryptedSecret = encrypted
+			sf.Secrets[i].KeyID = keyID
 			sf.Secrets[i].UpdatedAt = now
 			found = true
 			break
@@ -124,6 +139,7 @@ func (m *manager) runSet(args []string) error {
 			Repository:      *repo,
 			Name:            *name,
 			EncryptedSecret: encrypted,
+			KeyID:           keyID,
 			Env:             *env,
 			AddedAt:         now,
 			UpdatedAt:       now,
@@ -142,20 +158,66 @@ func (m *manager) runRotate(args []string) error {
 	fs := flag.NewFlagSet("rotate", flag.ExitOnError)
 	file := fs.String("file", "secrets.json", "Path to secrets JSON file")
 	env := fs.String("env", "", "Environment variable name to read new plaintext secrets from")
+	all := fs.Bool("all", false, "Rotate all secrets using each entry's env setting")
 	fs.Parse(args)
 
-	if *env == "" {
-		return fmt.Errorf("--env is required")
+	if *all && *env != "" {
+		return fmt.Errorf("--all and --env cannot be used together")
 	}
-
-	val := os.Getenv(*env)
-	if val == "" {
-		return fmt.Errorf("environment variable %s is empty or not set", *env)
+	if !*all && *env == "" {
+		return fmt.Errorf("either --env or --all is required")
 	}
 
 	sf, err := m.loadSecrets(*file)
 	if err != nil {
 		return fmt.Errorf("failed to load secrets file: %v", err)
+	}
+
+	if *all {
+		now := time.Now().UTC()
+		rotated := 0
+		skipped := 0
+		for i, s := range sf.Secrets {
+			if s.Env == "" {
+				skipped++
+				continue
+			}
+
+			val := os.Getenv(s.Env)
+			if val == "" {
+				skipped++
+				continue
+			}
+
+			encrypted, keyID, err := m.encryptSecret(s.Owner, s.Repository, s.Name, s.Env, val)
+			if err != nil {
+				return fmt.Errorf(
+					"encryption failed for %s in %s/%s: %v",
+					s.Name,
+					s.Owner,
+					s.Repository,
+					err,
+				)
+			}
+			sf.Secrets[i].EncryptedSecret = encrypted
+			sf.Secrets[i].KeyID = keyID
+			sf.Secrets[i].UpdatedAt = now
+			rotated++
+		}
+
+		if rotated > 0 {
+			if err := m.saveSecrets(*file, sf); err != nil {
+				return fmt.Errorf("failed to save secrets file: %v", err)
+			}
+		}
+
+		fmt.Printf("Rotated %d secrets, skipped %d secrets\n", rotated, skipped)
+		return nil
+	}
+
+	val := os.Getenv(*env)
+	if val == "" {
+		return fmt.Errorf("environment variable %s is empty or not set", *env)
 	}
 
 	now := time.Now().UTC()
@@ -164,7 +226,7 @@ func (m *manager) runRotate(args []string) error {
 		if s.Env != *env {
 			continue
 		}
-		encrypted, err := m.encryptSecret(s.Owner, s.Repository, s.Name, *env, val)
+		encrypted, keyID, err := m.encryptSecret(s.Owner, s.Repository, s.Name, *env, val)
 		if err != nil {
 			return fmt.Errorf(
 				"encryption failed for %s in %s/%s: %v",
@@ -175,6 +237,7 @@ func (m *manager) runRotate(args []string) error {
 			)
 		}
 		sf.Secrets[i].EncryptedSecret = encrypted
+		sf.Secrets[i].KeyID = keyID
 		sf.Secrets[i].UpdatedAt = now
 		updated++
 	}
@@ -272,7 +335,7 @@ func _main(args []string) int {
 
 	m := &manager{
 		client:  client,
-		pubKeys: make(map[string][32]byte),
+		pubKeys: make(map[string]publicKey),
 	}
 
 	cmd := args[1]
@@ -303,6 +366,7 @@ func usage() {
 	fmt.Fprintf(os.Stderr, `Usage:
   gh-secret-manager set --file <file> --owner <owner> --repository <repo> --name <name> --env <ENV_VAR>
   gh-secret-manager rotate --file <file> --env <ENV_VAR>
+  gh-secret-manager rotate --file <file> --all
   gh-secret-manager delete --file <file> --owner <owner> --repository <repo> --name <name>
 `)
 }
