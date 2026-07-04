@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/cli/go-gh/v2/pkg/api"
@@ -273,5 +274,132 @@ func TestRunRotateUpdatesKeyID(t *testing.T) {
 		if s.EncryptedSecret == "" {
 			t.Errorf("entry %s/%s EncryptedSecret is empty", s.Owner, s.Repository)
 		}
+	}
+}
+
+func TestRunRotateAllSkipsAndUpdates(t *testing.T) {
+	server, wantKeyID, _ := newPublicKeyServer(t)
+	defer server.Close()
+
+	m := newTestManager(t, server)
+	file := filepath.Join(t.TempDir(), "secrets.json")
+
+	sf := &SecretsFile{
+		Version: 1,
+		Secrets: []SecretEntry{
+			{Owner: "myorg", Repository: "repo-a", Name: "A_SECRET", Env: "ENV_A"},
+			{Owner: "myorg", Repository: "repo-b", Name: "B_SECRET", Env: "ENV_B"},
+			{Owner: "myorg", Repository: "repo-c", Name: "C_SECRET", Env: ""},
+			{Owner: "myorg", Repository: "repo-d", Name: "D_SECRET", Env: "EMPTY_ENV"},
+		},
+	}
+	if err := m.saveSecrets(file, sf); err != nil {
+		t.Fatalf("failed to save secrets file: %v", err)
+	}
+
+	t.Setenv("ENV_A", "value-a")
+	t.Setenv("ENV_B", "value-b")
+	t.Setenv("EMPTY_ENV", "")
+
+	if err := m.runRotate([]string{"--file", file, "--all"}); err != nil {
+		t.Fatalf("runRotate --all returned error: %v", err)
+	}
+
+	got, err := m.loadSecrets(file)
+	if err != nil {
+		t.Fatalf("failed to load secrets file: %v", err)
+	}
+
+	for _, s := range got.Secrets {
+		switch s.Name {
+		case "A_SECRET", "B_SECRET":
+			if s.KeyID != wantKeyID {
+				t.Errorf(
+					"entry %s/%s KeyID = %q, want %q",
+					s.Owner,
+					s.Repository,
+					s.KeyID,
+					wantKeyID,
+				)
+			}
+			if s.EncryptedSecret == "" {
+				t.Errorf("entry %s/%s EncryptedSecret is empty", s.Owner, s.Repository)
+			}
+		case "C_SECRET", "D_SECRET":
+			if s.KeyID != "" {
+				t.Errorf("entry %s/%s KeyID = %q, want empty", s.Owner, s.Repository, s.KeyID)
+			}
+			if s.EncryptedSecret != "" {
+				t.Errorf(
+					"entry %s/%s EncryptedSecret = %q, want empty",
+					s.Owner,
+					s.Repository,
+					s.EncryptedSecret,
+				)
+			}
+		default:
+			t.Fatalf("unexpected secret name: %s", s.Name)
+		}
+	}
+}
+
+func TestRunRotateAllSucceedsWhenAllSkipped(t *testing.T) {
+	server, _, _ := newPublicKeyServer(t)
+	defer server.Close()
+
+	m := newTestManager(t, server)
+	file := filepath.Join(t.TempDir(), "secrets.json")
+
+	sf := &SecretsFile{
+		Version: 1,
+		Secrets: []SecretEntry{
+			{Owner: "myorg", Repository: "repo-a", Name: "A_SECRET", Env: ""},
+			{Owner: "myorg", Repository: "repo-b", Name: "B_SECRET", Env: "UNSET_ENV"},
+		},
+	}
+	if err := m.saveSecrets(file, sf); err != nil {
+		t.Fatalf("failed to save secrets file: %v", err)
+	}
+
+	if err := m.runRotate([]string{"--file", file, "--all"}); err != nil {
+		t.Fatalf("runRotate --all returned error: %v", err)
+	}
+
+	got, err := m.loadSecrets(file)
+	if err != nil {
+		t.Fatalf("failed to load secrets file: %v", err)
+	}
+	for _, s := range got.Secrets {
+		if s.KeyID != "" {
+			t.Errorf("entry %s/%s KeyID = %q, want empty", s.Owner, s.Repository, s.KeyID)
+		}
+		if s.EncryptedSecret != "" {
+			t.Errorf(
+				"entry %s/%s EncryptedSecret = %q, want empty",
+				s.Owner,
+				s.Repository,
+				s.EncryptedSecret,
+			)
+		}
+	}
+}
+
+func TestRunRotateValidateFlags(t *testing.T) {
+	m := &manager{}
+
+	err := m.runRotate([]string{"--all", "--env", "MY_SECRET_ENV"})
+	if err == nil {
+		t.Fatalf("runRotate should fail when --all and --env are used together")
+	}
+	if !strings.Contains(err.Error(), "--all and --env cannot be used together") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	err = m.runRotate([]string{})
+	if err == nil {
+		t.Fatalf("runRotate should fail when neither --all nor --env is provided")
+	}
+	if !strings.Contains(err.Error(), "either --env or --all is required") {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }

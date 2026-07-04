@@ -158,20 +158,66 @@ func (m *manager) runRotate(args []string) error {
 	fs := flag.NewFlagSet("rotate", flag.ExitOnError)
 	file := fs.String("file", "secrets.json", "Path to secrets JSON file")
 	env := fs.String("env", "", "Environment variable name to read new plaintext secrets from")
+	all := fs.Bool("all", false, "Rotate all secrets using each entry's env setting")
 	fs.Parse(args)
 
-	if *env == "" {
-		return fmt.Errorf("--env is required")
+	if *all && *env != "" {
+		return fmt.Errorf("--all and --env cannot be used together")
 	}
-
-	val := os.Getenv(*env)
-	if val == "" {
-		return fmt.Errorf("environment variable %s is empty or not set", *env)
+	if !*all && *env == "" {
+		return fmt.Errorf("either --env or --all is required")
 	}
 
 	sf, err := m.loadSecrets(*file)
 	if err != nil {
 		return fmt.Errorf("failed to load secrets file: %v", err)
+	}
+
+	if *all {
+		now := time.Now().UTC()
+		rotated := 0
+		skipped := 0
+		for i, s := range sf.Secrets {
+			if s.Env == "" {
+				skipped++
+				continue
+			}
+
+			val := os.Getenv(s.Env)
+			if val == "" {
+				skipped++
+				continue
+			}
+
+			encrypted, keyID, err := m.encryptSecret(s.Owner, s.Repository, s.Name, s.Env, val)
+			if err != nil {
+				return fmt.Errorf(
+					"encryption failed for %s in %s/%s: %v",
+					s.Name,
+					s.Owner,
+					s.Repository,
+					err,
+				)
+			}
+			sf.Secrets[i].EncryptedSecret = encrypted
+			sf.Secrets[i].KeyID = keyID
+			sf.Secrets[i].UpdatedAt = now
+			rotated++
+		}
+
+		if rotated > 0 {
+			if err := m.saveSecrets(*file, sf); err != nil {
+				return fmt.Errorf("failed to save secrets file: %v", err)
+			}
+		}
+
+		fmt.Printf("Rotated %d secrets, skipped %d secrets\n", rotated, skipped)
+		return nil
+	}
+
+	val := os.Getenv(*env)
+	if val == "" {
+		return fmt.Errorf("environment variable %s is empty or not set", *env)
 	}
 
 	now := time.Now().UTC()
@@ -320,6 +366,7 @@ func usage() {
 	fmt.Fprintf(os.Stderr, `Usage:
   gh-secret-manager set --file <file> --owner <owner> --repository <repo> --name <name> --env <ENV_VAR>
   gh-secret-manager rotate --file <file> --env <ENV_VAR>
+  gh-secret-manager rotate --file <file> --all
   gh-secret-manager delete --file <file> --owner <owner> --repository <repo> --name <name>
 `)
 }
