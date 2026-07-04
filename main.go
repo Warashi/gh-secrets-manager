@@ -31,50 +31,63 @@ type SecretsFile struct {
 	Secrets []SecretEntry `json:"secrets"`
 }
 
-type manager struct {
-	client  *api.RESTClient
-	pubKeys map[string][32]byte
+// publicKey holds a GitHub repository public key along with the key ID
+// GitHub assigns to it. The key ID must be tracked alongside the encrypted
+// secret so consumers (e.g. Terraform) can identify which key was used.
+type publicKey struct {
+	ID  string
+	Key [32]byte
 }
 
-func (m *manager) getPublicKey(owner, repo string) ([32]byte, error) {
+type manager struct {
+	client  *api.RESTClient
+	pubKeys map[string]publicKey
+}
+
+func (m *manager) getPublicKey(owner, repo string) (publicKey, error) {
 	if pk, ok := m.pubKeys[owner+"/"+repo]; ok {
 		return pk, nil
 	}
 
-	var pk struct {
-		Key string `json:"key"`
+	var resp struct {
+		KeyID string `json:"key_id"`
+		Key   string `json:"key"`
 	}
-	if err := m.client.Get(fmt.Sprintf("repos/%s/%s/actions/secrets/public-key", owner, repo), &pk); err != nil {
-		return [32]byte{}, err
+	if err := m.client.Get(fmt.Sprintf("repos/%s/%s/actions/secrets/public-key", owner, repo), &resp); err != nil {
+		return publicKey{}, err
 	}
 
-	keyBytes, err := base64.StdEncoding.DecodeString(pk.Key)
+	keyBytes, err := base64.StdEncoding.DecodeString(resp.Key)
 	if err != nil {
-		return [32]byte{}, err
+		return publicKey{}, err
 	}
 	if len(keyBytes) != 32 {
-		return [32]byte{}, fmt.Errorf("unexpected public key length: %d", len(keyBytes))
+		return publicKey{}, fmt.Errorf("unexpected public key length: %d", len(keyBytes))
 	}
-	var pubKey [32]byte
-	copy(pubKey[:], keyBytes)
+	var pk publicKey
+	pk.ID = resp.KeyID
+	copy(pk.Key[:], keyBytes)
 
-	m.pubKeys[owner+"/"+repo] = pubKey
+	m.pubKeys[owner+"/"+repo] = pk
 
-	return pubKey, nil
+	return pk, nil
 }
 
-func (m *manager) encryptSecret(owner, repo, name, env string, secret string) (string, error) {
-	pubKey, err := m.getPublicKey(owner, repo)
+func (m *manager) encryptSecret(
+	owner, repo, name, env string,
+	secret string,
+) (encrypted, keyID string, err error) {
+	pk, err := m.getPublicKey(owner, repo)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
-	sealed, err := box.SealAnonymous(nil, []byte(secret), &pubKey, rand.Reader)
+	sealed, err := box.SealAnonymous(nil, []byte(secret), &pk.Key, rand.Reader)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	enc := base64.StdEncoding.EncodeToString(sealed)
-	return enc, nil
+	return enc, pk.ID, nil
 }
 
 func (m *manager) runSet(args []string) error {
@@ -95,7 +108,7 @@ func (m *manager) runSet(args []string) error {
 		return fmt.Errorf("environment variable %s is empty or not set", *env)
 	}
 
-	encrypted, err := m.encryptSecret(*owner, *repo, *name, *env, val)
+	encrypted, _, err := m.encryptSecret(*owner, *repo, *name, *env, val)
 	if err != nil {
 		return fmt.Errorf("encryption failed: %v", err)
 	}
@@ -164,7 +177,7 @@ func (m *manager) runRotate(args []string) error {
 		if s.Env != *env {
 			continue
 		}
-		encrypted, err := m.encryptSecret(s.Owner, s.Repository, s.Name, *env, val)
+		encrypted, _, err := m.encryptSecret(s.Owner, s.Repository, s.Name, *env, val)
 		if err != nil {
 			return fmt.Errorf(
 				"encryption failed for %s in %s/%s: %v",
@@ -272,7 +285,7 @@ func _main(args []string) int {
 
 	m := &manager{
 		client:  client,
-		pubKeys: make(map[string][32]byte),
+		pubKeys: make(map[string]publicKey),
 	}
 
 	cmd := args[1]
